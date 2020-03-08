@@ -1,32 +1,112 @@
 ﻿
 namespace MeshBasics.ProceduralGrid
 {
+    using System;
     using System.Collections;
     using UnityEngine;
 
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     public class Grid : MonoBehaviour
     {
-        public int xSize;
-        public int ySize;
-
+        private int xSize;
+        private int ySize;
         private Mesh mesh;
-
         private Vector3[] vertices;
+        private Renderer gridRenderer;
 
-
-        private void Awake()
+        void Awake()
         {
-            Generate();
+            gridRenderer = GetComponent<Renderer>();
         }
 
-        private void Generate()
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.B))
+            {
+                Build();
+            }
+        }
+
+        private void Build()
+        {
+            SetSize(UnityEngine.Random.Range(1,10),
+                UnityEngine.Random.Range(1,10));
+
+            BuildMesh();
+            SetVertices();
+            SetUV();
+            SetTangents();
+            SetTriangles();
+
+            mesh.RecalculateNormals();
+
+            SetMaterialTiling();
+        }
+
+        private void SetMaterialTiling()
+        {
+            this.gridRenderer.sharedMaterial.SetTextureScale("_MainTex", new Vector2(xSize, ySize));
+        }
+
+        public void SetSize(int xSize, int ySize)
+        {
+            this.xSize = xSize;
+            this.ySize = ySize;
+        }
+
+        private void BuildMesh()
         {
             GetComponent<MeshFilter>().mesh = mesh = new Mesh();
             mesh.name = "Procedural Grid";
+        }
 
+        private void SetVertices()
+        {
+            GenerateVertices();
+            mesh.vertices = vertices;
+        }
+
+        private void GenerateVertices()
+        {
             vertices = new Vector3[(xSize + 1) * (ySize + 1)];
+
+            for (int i = 0, y = 0; y <= ySize; y++)
+            {
+                for (int x = 0; x <= xSize; x++, i++)
+                {
+                    vertices[i] = new Vector3(x, y);
+                }
+            }
+        }
+
+        private void SetUV()
+        {
+            mesh.uv = GenerateUV();
+        }
+
+        private Vector2[] GenerateUV()
+        {
             Vector2[] uv = new Vector2[vertices.Length];
+
+            for (int i = 0, y = 0; y <= ySize; y++)
+            {
+                for (int x = 0; x <= xSize; x++, i++)
+                {
+                    uv[i] = new Vector2((float)x / xSize, (float)y / ySize);
+                }
+            }
+
+            return uv;
+
+        }
+
+        private void SetTangents()
+        {
+            mesh.tangents = GenerateTangents();
+        }
+
+        private Vector4[] GenerateTangents()
+        {
             Vector4[] tangents = new Vector4[vertices.Length];
             Vector4 tangent = new Vector4(1f, 0f, 0f, -1f);
 
@@ -34,16 +114,20 @@ namespace MeshBasics.ProceduralGrid
             {
                 for (int x = 0; x <= xSize; x++, i++)
                 {
-                    vertices[i] = new Vector3(x, y);
-                    uv[i] = new Vector2((float)x / xSize, (float)y / ySize);
                     tangents[i] = tangent;
                 }
             }
 
-            mesh.vertices = vertices;
-            mesh.uv = uv;
-            mesh.tangents = tangents;
+            return tangents;
+        }
 
+        private void SetTriangles()
+        {
+            mesh.triangles = TriangulateVertices();
+        }
+
+        private int[] TriangulateVertices()
+        {
             int[] triangles = new int[xSize * ySize * 6];
             for (int ti = 0, vi = 0, y = 0; y < ySize; y++, vi++)
             {
@@ -56,8 +140,7 @@ namespace MeshBasics.ProceduralGrid
                 }
             }
 
-            mesh.triangles = triangles;
-            mesh.RecalculateNormals();
+            return triangles;
         }
     }
 }
