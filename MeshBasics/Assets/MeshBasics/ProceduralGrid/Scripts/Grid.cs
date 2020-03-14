@@ -19,28 +19,30 @@ namespace MeshBasics.ProceduralGrid
             gridRenderer = GetComponent<Renderer>();
         }
 
-        void Update()
+        public void SetMaterial(Material gridMaterial)
         {
-            if (Input.GetKeyDown(KeyCode.B))
-            {
-                Build();
-            }
+            gridRenderer.material = gridMaterial;
         }
 
-        private void Build()
+        public void SetSize(Vector3 size)
         {
-            SetSize(UnityEngine.Random.Range(1,10),
-                UnityEngine.Random.Range(1,10));
+            xSize = (int)size.x;
+            ySize = (int)size.y;
+        }
 
-            BuildMesh();
-            SetVertices();
-            SetUV();
-            SetTangents();
-            SetTriangles();
+        public void SetTangents(Vector4[] tangents)
+        {
+            mesh.tangents = tangents;
+        }
 
-            mesh.RecalculateNormals();
+        public int GetXSize()
+        {
+            return xSize;
+        }
 
-            SetMaterialTiling();
+        public int GetYSize()
+        {
+            return ySize;
         }
 
         private void SetMaterialTiling()
@@ -54,93 +56,37 @@ namespace MeshBasics.ProceduralGrid
             this.ySize = ySize;
         }
 
-        private void BuildMesh()
+        public void SetMesh(Mesh mesh)
         {
-            GetComponent<MeshFilter>().mesh = mesh = new Mesh();
-            mesh.name = "Procedural Grid";
+            GetComponent<MeshFilter>().mesh = this.mesh = mesh;
         }
 
-        private void SetVertices()
+        public int GetVerticeCount()
         {
-            GenerateVertices();
+            return mesh.vertices.Length;
+        }
+
+        public void SetVertices(Vector3[] vertices)
+        {
             mesh.vertices = vertices;
         }
 
-        private void GenerateVertices()
+        public void SetUV(Vector2[] uvVector)
         {
-            vertices = new Vector3[(xSize + 1) * (ySize + 1)];
-
-            for (int i = 0, y = 0; y <= ySize; y++)
-            {
-                for (int x = 0; x <= xSize; x++, i++)
-                {
-                    vertices[i] = new Vector3(x, y);
-                }
-            }
+            mesh.uv = uvVector;
         }
 
-        private void SetUV()
+        public void Configure()
         {
-            mesh.uv = GenerateUV();
+            mesh.RecalculateNormals();
+
+            SetMaterialTiling();
         }
 
-        private Vector2[] GenerateUV()
+        public void SetTriangles(int[] triangles)
         {
-            Vector2[] uv = new Vector2[vertices.Length];
-
-            for (int i = 0, y = 0; y <= ySize; y++)
-            {
-                for (int x = 0; x <= xSize; x++, i++)
-                {
-                    uv[i] = new Vector2((float)x / xSize, (float)y / ySize);
-                }
-            }
-
-            return uv;
-
+            mesh.triangles = triangles;
         }
 
-        private void SetTangents()
-        {
-            mesh.tangents = GenerateTangents();
-        }
-
-        private Vector4[] GenerateTangents()
-        {
-            Vector4[] tangents = new Vector4[vertices.Length];
-            Vector4 tangent = new Vector4(1f, 0f, 0f, -1f);
-
-            for (int i = 0, y = 0; y <= ySize; y++)
-            {
-                for (int x = 0; x <= xSize; x++, i++)
-                {
-                    tangents[i] = tangent;
-                }
-            }
-
-            return tangents;
-        }
-
-        private void SetTriangles()
-        {
-            mesh.triangles = TriangulateVertices();
-        }
-
-        private int[] TriangulateVertices()
-        {
-            int[] triangles = new int[xSize * ySize * 6];
-            for (int ti = 0, vi = 0, y = 0; y < ySize; y++, vi++)
-            {
-                for (int x = 0; x < xSize; x++, ti += 6, vi++)
-                {
-                    triangles[ti] = vi;
-                    triangles[ti + 3] = triangles[ti + 2] = vi + 1;
-                    triangles[ti + 4] = triangles[ti + 1] = vi + xSize + 1;
-                    triangles[ti + 5] = vi + xSize + 2;
-                }
-            }
-
-            return triangles;
-        }
     }
 }
